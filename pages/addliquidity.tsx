@@ -29,7 +29,7 @@ import { addLiquidity, addLiquidityETH, _removeLiquidity, _removeLiquidityETH } 
 
 import Box from '@mui/material/Box';
 import Slider from '@mui/material/Slider';
-import { getBalanceOf, getToken0, getToken1 } from '../services/pair-service';
+import { getBalanceOf, getToken0, getToken1, getTotalSupply, getReserves } from '../services/pair-service';
 
 import { styled } from '@mui/material/styles';
 import Dialog from '@mui/material/Dialog';
@@ -120,9 +120,7 @@ export default function addliquidity() {
   const [tokenAllowance1, setTokenAllowance1] = useState<string | null>(null);
   const [tokenAllowance2, setTokenAllowance2] = useState<string | null>(null);
   const [network, setNetwork] = useState<string | null>(null);
-  const [addliquidityLoading, setAddliquidityLoading] = useState(false);
-  const [approveLoading, setApproveLoading] = useState(false);
-  const [tokenBalances, setTokenBalances] = useState<Record<string, string>>({});
+  // const [tokenBalances, setTokenBalances] = useState<Record<string, string>>({});
 
   const [token1, setToken1] = useState<string | null>(null);
   const [token2, setToken2] = useState<string | null>(null);
@@ -144,6 +142,10 @@ export default function addliquidity() {
 
   const [showLP, setShowLP] = useState<string | null>(null);
   const [dataPair, setDataPair] = useState<any[]>([]);
+
+  const [amountMyToken1, setAmountMyToken1] = useState<number | null>(null);
+  const [amountMyToken2, setAmountMyToken2] = useState<number | null>(null);
+
 
 
   const [toggle, setToggle] = useState(true);
@@ -652,9 +654,23 @@ export default function addliquidity() {
   };
 
   const onChangePairLPHandle = async (e: any) => {
-    console.log('e',e);
-    console.log('Number(balanceOfLP)',Number(balanceOfLP));
+    // console.log('e',e);
+    // console.log('Number(balanceOfLP)',Number(balanceOfLP));
+
+    const totalSupply:Number = Number(ethers.utils.formatEther(await getTotalSupply(pairLP!)))
+    const reserves1:Number  = Number(ethers.utils.formatEther((await getReserves(pairLP!))._reserve0))
+    const reserves2:Number  = Number(ethers.utils.formatEther((await getReserves(pairLP!))._reserve1))
+    const balances:Number  =   Number(ethers.utils.formatEther(await getBalanceOf(pairLP!, address!)))
+
+    // console.log('reserves1', reserves1);
+    // console.log('reserves2',reserves2);
     
+    setAmountMyToken1((balances/totalSupply*reserves1)* e /100)
+    setAmountMyToken2((balances/totalSupply*reserves2)* e / 100)
+
+    // console.log('our 1: ',(balances/totalSupply*reserves1)* e /100);
+    // console.log('our 2: ',(balances/totalSupply*reserves2)* e / 100);
+
 
     if (e == 0) {
       setAmountLP(0);
@@ -663,7 +679,7 @@ export default function addliquidity() {
     } else {
       setAmountLP(Number(balanceOfLP));
     }
-        console.log('amountLP',amountLP);
+        console.log('amountLP',(Number(balanceOfLP) * e) / 100);
 
   };
 
@@ -906,6 +922,9 @@ text-textinvalid outline outline-offset-1 outline-textinvalid drop-shadow-xl"
                   {pairLP && amountLP ? (
                     <div className="py-10 flex-column w-auto grid text-textblack ">
                       {Number(LPAllowance) > 0 ? (
+                        <div>Output {amountMyToken1} {token1} and {amountMyToken2} {token2}
+                        <br />
+                        <br />
                         <button
                           className="justify-self-center w-32 h-10 rounded-full bg-gradient-to-r
                      from-blueswapdark  to-blueswapbutton 
@@ -914,6 +933,7 @@ text-textinvalid outline outline-offset-1 outline-textinvalid drop-shadow-xl"
                         >
                           Approve
                         </button>
+                        </div>
                       ) : (
                         <button
                           className="justify-self-center w-32 h-10 rounded-full bg-gradient-to-r
@@ -935,6 +955,7 @@ text-textinvalid outline outline-offset-1 outline-textinvalid drop-shadow-xl"
                           >
                             Supply
                           </button>
+                          
                         ) : (
                           <button
                             className="justify-self-center w-32 h-10 rounded-full bg-gradient-to-r
@@ -982,7 +1003,7 @@ text-textinvalid outline outline-offset-1 outline-textinvalid drop-shadow-xl"
                       <DialogContent>
                         Waiting For Confirmation
                         <Typography gutterBottom>
-                          {getPendingLiquidity()} {amountLP!} {token1!} and {amountLP!} {token2!}
+                          {getPendingLiquidity()} {amountMyToken1!} {token1!} and {amountMyToken2!} {token2!}
                         </Typography>
                       </DialogContent>
                     </Box>
